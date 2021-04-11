@@ -31,4 +31,4 @@ To restore from such tape copies, you have to be aware that the files are listed
 
 I’m sure the script leaves a lot of room for enhancements, so look at it as being a starting point to build a customized solution for your environment yourself. Have fun!
 
-    Disclaimer: This script is provided as-is, without any kind of support or guarantee, so chances are that it might completely fail in your environment or even wreaks havoc on your backups and/or production systems! Do not run it in a production environment without proper testing and validation! Most importantly, don’t use it without taking a valid backup of the environment beforehand!
+_Disclaimer: This script is provided as-is, without any kind of support or guarantee, so chances are that it might completely fail in your environment or even wreaks havoc on your backups and/or production systems! Do not run it in a production environment without proper testing and validation! Most importantly, don’t use it without taking a valid backup of the environment beforehand!_
