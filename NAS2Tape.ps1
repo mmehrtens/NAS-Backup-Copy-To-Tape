@@ -1,7 +1,7 @@
 #
 # NAS2Tape.ps1
 #
-# creates tape backup copies of restore points created by a given NAS backup job.
+# creates backup copies of restore points created by a given NAS backup job on tape
 #
 # v2021.04.09 M.Mehrtens, Veeam.com
 #
@@ -16,10 +16,10 @@ $NASJobname = "NAS backup job"
 $FileToTapeJobname = "NAS copy to tape"
 
 # mount server used for instant file share recovery
-$mountServer     = "winrepo-1.ad.local"
-$FLRFolder       = "C:\VeeamFLR"
+$mountServer = "winrepo-1.ad.local"
+$FLRFolder = "C:\VeeamFLR"
 
-# cachje repository to be used for new file share objects in inventory (must exist, will not be used)
+# cache repository to be used for new file share objects in inventory (must exist, will not be used)
 $cacheRepository = "NAS Cache"
 
 # user account to be used as owner of the instant NAS recovery file shares (must exist in Veeam credential manager!)
@@ -53,24 +53,33 @@ foreach($NASobject in $NASJobObjects) {
         $ErrorActionPreference = "SilentlyContinue"
         if($null -eq $restorePoint) {
             # try to get a restore point of a NFS/SMB share (will fail for filer objects!)
-            $restorePoint = Get-VBRNASBackupRestorePoint -NASBackup $NASBackups -NASServer $NASobject.Server `
+            $restorePoint = Get-VBRNASBackupRestorePoint -NASBackup $NASBackups `
+                                                         -NASServer $NASobject.Server `
                             | Sort-Object –Property CreationTime –Descending | Select-Object -First 1
         }
         if($null -eq $restorePoint) {
             # if the above failed, try to get latest restore point of filer object's share
-            $restorePoint = Get-VBRNASBackupRestorePoint -NASBackup $NASBackups -NASServer (Get-VBRNASServer -Name $NASobject.Path) `
-                            | Sort-Object –Property CreationTime –Descending | Select-Object -First 1 -ErrorAction 
+            $restorePoint = Get-VBRNASBackupRestorePoint -NASBackup $NASBackups `
+                                                         -NASServer (Get-VBRNASServer -Name $NASobject.Path) `
+                            | Sort-Object –Property CreationTime –Descending | Select-Object -First 1
         }
         $ErrorActionPreference = "Continue"
 
         # do we have a valid restore point?
         if($null -ne $restorePoint) {
             # set mount options and permissions for recovery share
-            $permSet = New-VBRNASPermissionSet -RestorePoint $restorePoint -Owner $Owner -AllowSelected -PermissionScope $Owner
-            $mountOptions = New-VBRNASInstantRecoveryMountOptions -RestorePoint $restorePoint -MountServer $mountServer
+            $permSet = New-VBRNASPermissionSet -RestorePoint $restorePoint `
+                                               -Owner $Owner `
+                                               -AllowSelected `
+                                               -PermissionScope $Owner
+            $mountOptions = New-VBRNASInstantRecoveryMountOptions -RestorePoint $restorePoint `
+                                                                  -MountServer $mountServer
 
             # start instant NAS recovery for this share and save for later
-            $thisSession = Start-VBRNASInstantRecovery -RestorePoint $restorePoint -Permissions $permSet -MountOptions $mountOptions -RunAsync
+            $thisSession = Start-VBRNASInstantRecovery -RestorePoint $restorePoint `
+                                                       -Permissions $permSet `
+                                                       -MountOptions $mountOptions `
+                                                       -RunAsync
             $recoverySessions += $thisSession
         } 
         else {
@@ -112,7 +121,10 @@ if($n_sessions -gt 0) {
     foreach($thisSession in $recoverySessions) {
         
         Write-Host "  "$thisSession.SharePath
-        $invShare = Add-VBRNASSMBServer -Path $thisSession.SharePath -CacheRepository (Get-VBRBackupRepository -Name $cacheRepository) -AccessCredentials $cred -ErrorAction SilentlyContinue
+        $invShare = Add-VBRNASSMBServer -Path $thisSession.SharePath `
+                                        -CacheRepository (Get-VBRBackupRepository -Name $cacheRepository) `
+                                        -AccessCredentials $cred `
+                                        -ErrorAction SilentlyContinue
         $IRShares += $invShare
 
         # create file-to-tape source objects for this inventory item
