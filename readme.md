@@ -17,8 +17,10 @@ We discussed this idea in more detail and created a process (for a single NAS ba
     - Delete the inventory items created in step 3.
     - Stop the instant file share recovery sessions that were started in step 2.
 
-## The Script / Prerequisites
+## The Script
 Working through this process looked very promising, so the next step was of course to automate it via Powershell. The script [NAS2Tape.ps1] I created for this process has the following prerequisites and needs some variables to be customized with respect to your environment:
+
+### Prerequisites
 -	It is assumed that this script is located and run on the Veeam backup server. It could of course be run on any server that has the Veeam Powershell module installed, but in this case some extra code will be required (e.g. for establishing connection to the backup server).
 -	A main NAS backup job must already exist (as a “source” of our tape backup), and the name of this job needs to be referenced in the ``$NASJobName`` variable in the script header. The job’s source objects must be SMB shares; if you are backing up shares of a NAS filer (e.g. NetApp), please make sure that the actual shares are selected in the job (not their parent volumes!)
 -	A File to tape job must already exist, using some empty dummy folder as source (sources will be modified by the script!), and configured to use the desired tape media pools etc. Scheduling should be disabled for full as well as incremental backups and the use of VSS should also be disabled. The name of the file to tape job needs to be referenced in the ``$FileToTapeJobname`` variable in the script header.
